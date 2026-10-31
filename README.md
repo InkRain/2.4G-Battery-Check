@@ -2,9 +2,17 @@
 
 一个常驻托盘的 Windows 小工具：直接通过 USB 接收器的 HID 私有协议读取 **VGN 键盘/鼠标**（及罗技、Keychron 等）的实时电量，无需安装厂商驱动。
 
-![界面预览](docs/screenshot_main_light.png)
+## 界面预览
 
-真实硬件运行效果（VGN V108 键盘 100% + VGN 蜻蜓鼠标 80%）：
+| 主界面（浅色） | 主界面（夜间） |
+|---|---|
+| ![主界面-浅色](docs/screenshot_main_light.png) | ![主界面-夜间](docs/screenshot_main_dark.png) |
+
+| 托盘电量面板 | 低电量提醒 |
+|---|---|
+| ![托盘面板](docs/screenshot_popup.png) | ![低电量提醒](docs/screenshot_toast.png) |
+
+实机运行（VGN V108 键盘 99%；鼠标休眠时卡片显示"休眠"，托盘图标保留上次电量，用一下设备即自动补扫）：
 
 ![实机运行](docs/screenshot_real.png)
 
@@ -17,7 +25,7 @@
 - 🧩 **通用兼容**：罗技 HID++（Unifying/Lightspeed/Bolt）、Keychron Ultra-Link、ATK Nordic 54、MCHOSE Realtek 推送、标准 HID 电池用法
 - 🪟 **Windows 11 风格界面**：圆角无边框窗口、液态玻璃质感、浅色/深色/跟随系统主题、设备卡片网格
 - 📌 **托盘常驻**：左键弹电量面板（右下角通知卡片），右键菜单；每类设备一个环形电量图标；关闭窗口不退后台
-- ⏱️ **定时刷新**：30 秒 / 1 分钟 / 5 分钟 / 关闭，也可随时手动刷新
+- ⏱️ **定时刷新**：15 秒 / 30 秒 / 1 分钟 / 5 分钟，也可随时手动刷新
 - 🔔 **低电量提醒**：阈值可设（如 ≤20%），到点弹右下角玻璃通知，充电后自动复位
 - 🚀 **开机自启（静默）**：开机时只驻留托盘，不弹窗口、不弹提醒，不打断你
 - ⌨️ **指定程序内屏蔽 Win 键**：为游戏单独屏蔽 Win 键（按前台进程判断），其他程序完全不受影响
@@ -95,7 +103,7 @@ Windows 不为 2.4G 接收器类设备提供电量 API，各厂商驱动（VGN H
 │   ├── core/                # 设置持久化 / 开机自启 / Win 键钩子 / 单实例 / 临时目录清理
 │   └── ui/                  # PySide6 界面（主窗口/托盘/弹窗/主题/Toast）
 ├── tools/                   # 开发期探测与回归测试脚本
-├── docs/                    # 界面截图
+├── docs/                    # 界面截图（tools/make_screenshots.py 生成）
 └── requirements.txt
 ```
 
