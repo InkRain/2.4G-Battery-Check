@@ -2,6 +2,9 @@
 
 一个常驻托盘的 Windows 小工具：直接通过 USB 接收器的 HID 私有协议读取 **VGN 键盘/鼠标**（及罗技、Keychron 等）的实时电量，无需安装厂商驱动。
 
+> **直接下载**：[2.4G-Battery-Check-v1.0.0.exe](https://github.com/InkRain/2.4G-Battery-Check/releases/download/v1.0.0/2.4G-Battery-Check-v1.0.0.exe)　·　Windows 10/11 x64 单文件版（约 37 MB），双击即用，不需要装 Python 或驱动
+> 版本说明见 [Releases](https://github.com/InkRain/2.4G-Battery-Check/releases)
+
 ## 界面预览
 
 | 主界面（浅色） | 主界面（夜间） |
@@ -35,7 +38,13 @@
 
 ## 快速开始
 
-### 方式一：直接运行（需要 Python 3.10+）
+### 方式一：下载现成的 exe（推荐给普通用户）
+
+到 [Releases](https://github.com/InkRain/2.4G-Battery-Check/releases) 下载 `2.4G-Battery-Check-v1.0.0.exe`，
+放到任意目录双击即可（建议固定到桌面或开始菜单）。首次运行会自解压到 `%TEMP%`，约 2–3 秒出界面；
+若被 SmartScreen 拦截，选择「更多信息 → 仍要运行」。
+
+### 方式二：源码运行（需要 Python 3.10+）
 
 ```bash
 pip install -r requirements.txt
@@ -45,7 +54,7 @@ python main.py --demo     # 演示模式（无硬件预览界面）
 python main.py --diag     # 诊断：打印所有 HID 设备与协议探测结果
 ```
 
-### 方式二：打包为单文件 exe
+### 方式三：自己打包单文件 exe
 
 ```bash
 pip install pyinstaller
@@ -54,8 +63,8 @@ python -m PyInstaller --noconfirm --clean --onefile --windowed \
     --add-data "app/resources;app/resources" main.py
 ```
 
-产物是单个 `dist/2.4G Battery Check.exe`（约 40 MB，Qt 运行库已内嵌），
-拷到任意位置双击即可运行，不需要携带其他文件。首次运行若被 SmartScreen 拦截，选择"更多信息 → 仍要运行"。
+产物是单个 `dist/2.4G Battery Check.exe`（约 37 MB，Qt 运行库已内嵌），
+拷到任意位置双击即可运行，不需要携带其他文件。Windows 用户也可以直接双击 `build.bat`。
 
 ## 使用说明
 
