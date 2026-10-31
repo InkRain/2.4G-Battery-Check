@@ -164,6 +164,9 @@ class MainWindow(QWidget):
         cl = QVBoxLayout(content)
         cl.setContentsMargins(24, 8, 24, 16)
         cl.setSpacing(14)
+        # 内容容器透明：底色由窗口 paintEvent 的玻璃层负责
+        content.setAutoFillBackground(False)
+        content.setStyleSheet("background: transparent;")
 
         # 大标题
         big = QLabel(TITLE)
@@ -312,8 +315,11 @@ class MainWindow(QWidget):
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         scroll.viewport().setAutoFillBackground(False)
+        scroll.viewport().setStyleSheet("background: transparent;")
         scroll.setStyleSheet(
             "QScrollArea { background: transparent; border: none; }"
+            # 视口和内容容器本身不画底：否则深色主题下会透出系统浅色面板底色
+            "QScrollArea > QWidget > QWidget { background: transparent; }"
             "QScrollBar:vertical { background: transparent; width: 8px; margin: 2px 2px 2px 0; }"
             "QScrollBar::handle:vertical { background: rgba(128,128,128,110); border-radius: 4px;"
             " min-height: 32px; }"
