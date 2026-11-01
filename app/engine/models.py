@@ -124,16 +124,36 @@ VENDOR_NAMES = {
 
 
 def guess_kind(device: DeviceInfo) -> str:
-    """根据 usage 判断设备类型。"""
-    for i in device.interfaces:
-        if i.usage_page == 0x01:
-            if i.usage == 0x06:
-                return "keyboard"
-            if i.usage == 0x02:
-                return "mouse"
+    """判断设备类型。
+
+    坑：2.4G 接收器几乎都是复合设备，同一份描述符里同时挂着键盘接口
+    （0x01:0x06）和鼠标接口（0x01:0x02），且两者的先后顺序由固件决定、
+    并不固定。VGN V108 键盘和 Dragonfly 鼠标都出现过这种情况：
+
+    - 早期实现「取第一个命中的 0x01 接口」→ V108 先命中鼠标接口，被判成鼠标，
+      于是和真鼠标归成同一类，托盘按类合并后只剩一个图标（键盘图标消失）。
+    - 改成「有键盘接口就算键盘」→ 反过来把 Dragonfly 判成了键盘。
+
+    所以这里有明确的判据顺序：型号表 → 产品名关键词 → 接口能力兜底。
+    """
     known = KNOWN_DEVICES.get((device.vid, device.pid))
     if known:
         return known[1]
+
+    name = (device.dongle_name or "").lower()
+    for words, kind in (
+        (("headset", "headphone", "earbud", "耳机"), "headset"),
+        (("keyboard", "键盘"), "keyboard"),
+        (("mouse", "鼠标"), "mouse"),
+    ):
+        if any(w in name for w in words):
+            return kind
+
+    usages = {(i.usage_page, i.usage) for i in device.interfaces}
+    if (0x01, 0x06) in usages:
+        return "keyboard"
+    if (0x01, 0x02) in usages:
+        return "mouse"
     return "other"
 
 
