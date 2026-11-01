@@ -23,6 +23,10 @@ class DeviceState:
         self.reading: Optional[BatteryReading] = None
         self.protocol: Optional[Protocol] = None     # 上次成功的协议
         self.last_query = 0.0
+        # 最后一次读到的有效电量。不能直接用 reading.percent 当缓存：
+        # 每轮都会用新读数覆盖 reading，一旦某轮读不到（休眠 -> None），
+        # 缓存就断了，之后托盘图标会一直灰着（用户反馈过的「绿环变灰」）。
+        self.last_percent: Optional[int] = None
 
     @property
     def key(self) -> str:
@@ -96,8 +100,7 @@ class BatteryScanner:
         with self._lock:
             state = self._states.get(dev.key)
             cached_proto = state.protocol if state else None
-            last_percent = (state.reading.percent
-                            if state and state.reading else None)
+            last_percent = state.last_percent if state else None
         order = list(PROTOCOLS)
         if cached_proto is not None:
             order.sort(key=lambda p: 0 if p is cached_proto else 1)
@@ -164,6 +167,8 @@ class BatteryScanner:
             reading = self.query_device(dev)
             state.reading = reading
             state.last_query = time.time()
+            if reading.ok:
+                state.last_percent = reading.percent   # 记住最后一次有效电量
             if self._is_relevant(dev, reading):
                 states.append(state)
         states = self._merge_duplicates(states)
