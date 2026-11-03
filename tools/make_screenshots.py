@@ -62,7 +62,7 @@ def demo_states(charging: bool = False) -> list[DeviceState]:
     """与实机截图同一对设备，保证 README 里几张图观感一致。"""
     return [
         _state("VGN V108 2.4G Dongle", "391D:2A02", "keyboard", 99),
-        _state("Dragonfly 3 Master+", "391D:1A05", "mouse",
+        _state("Dragonfly 3 Ultra", "391D:1A25", "mouse",
                100 if charging else 80, charging=charging),
     ]
 
@@ -154,7 +154,7 @@ def main() -> int:
         print("低电量提醒")
         from app.ui.toast import Toast
         t = Toast.notify(light.window.theme, "低电量提醒",
-                         "Dragonfly 3 Master+ 电量仅剩 15%，请及时充电",
+                         "Dragonfly 3 Ultra 电量仅剩 15%，请及时充电",
                          QColor("#D64545"))
         QTimer.singleShot(200, lambda: (save(t, "screenshot_toast.png"), t.close()))
 

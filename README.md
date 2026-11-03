@@ -15,7 +15,7 @@
 |---|---|
 | ![托盘面板](docs/screenshot_popup.png) | ![低电量提醒](docs/screenshot_toast.png) |
 
-实机运行（VGN V108 键盘 99%；鼠标休眠时卡片显示"休眠"，托盘图标保留上次电量，用一下设备即自动补扫）：
+实机运行（Dragonfly 3 Ultra 100%；VGN V108 键盘休眠时卡片显示"休眠"，托盘图标保留上次电量，用一下设备即自动补扫）：
 
 ![实机运行](docs/screenshot_real.png)
 
