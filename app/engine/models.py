@@ -99,6 +99,8 @@ KNOWN_DEVICES = {
     (0x3554, 0xF58E): ("VXE R1 SE+ 接收器", "mouse"),
     # VGN 蜻蜓系列（391D）
     (0x391D, 0x1A05): ("Dragonfly 3 Master+ 2.4G Dongle", "mouse"),
+    (0x391D, 0x1A25): ("Dragonfly 3 Ultra 2.4G Dongle", "mouse"),
+    (0x391D, 0x1028): ("Dragonfly 3 Ultra（有线）", "mouse"),
     # VGN V108 键盘（391D）
     (0x391D, 0x2A02): ("VGN V108 2.4G Dongle", "keyboard"),
     # Keychron
@@ -143,8 +145,9 @@ def guess_kind(device: DeviceInfo) -> str:
     name = (device.dongle_name or "").lower()
     for words, kind in (
         (("headset", "headphone", "earbud", "耳机"), "headset"),
+        # 蜻蜓 / 猎鹰系列只出鼠标，产品名里并不会出现 "mouse" 字样
+        (("mouse", "鼠标", "dragonfly", "蜻蜓", "falcon", "猎鹰"), "mouse"),
         (("keyboard", "键盘"), "keyboard"),
-        (("mouse", "鼠标"), "mouse"),
     ):
         if any(w in name for w in words):
             return kind

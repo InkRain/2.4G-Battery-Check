@@ -233,6 +233,94 @@ class BeiyingProtocol(Protocol):
         return BatteryReading(status=ST_SLEEPING, protocol=self.name, detail="无响应")
 
 
+# ================================================================ VGN Ry Feature
+class RyFeatureProtocol(Protocol):
+    """VGN Ry 方案无线鼠标（Dragonfly 3 Ultra 等，FFFF:0002 feature 通道）。
+
+    这一代接收器和 Nordic 52 完全不同：只有 feature 报告、没有 output 报告，
+    所以老协议「写 output report」的路径一律失败（表现为 no_api）。
+
+    协议逆向自 VGN VHUB 的 RyMsServe：
+      下发  64 字节： [0]=命令字 [1]=参数 [6]=校验(255 - 前 6 字节和) 其余补 0
+      回包  64 字节： [0]=响应标志(1=接收器已同步) [2]=电量百分比
+
+    实测 Dragonfly 3 Ultra（391D:1A25）发 0xF7 后回包 `01 00 64 01 01 01 02`，
+    即 100%；不发命令时回包首字节为 0（接收器尚未同步），此时补一条链路
+    准备命令（0xF6 arg=5）再读一次。
+    """
+    name = "VGN Ry Feature (VGN 无线鼠标)"
+    priority = 95
+
+    VIDS = (0x391D,)          # 目前只在蜻蜓 3 代实测，其它 VID 走原协议
+    USAGE_PAGE = 0xFFFF
+    CMD_STATUS = 0xF7         # 接收器状态块（含电量）
+    CMD_LINK = 0xF6           # 链路准备
+
+    def _collection(self, device: DeviceInfo):
+        for i in device.vendor_collections:
+            if i.usage_page == self.USAGE_PAGE and i.feature_len >= 17:
+                return i
+        return None
+
+    def matches(self, device: DeviceInfo) -> bool:
+        return device.vid in self.VIDS and self._collection(device) is not None
+
+    @staticmethod
+    def _frame(cmd: int, arg: int, size: int) -> bytes:
+        body = [cmd, arg, 0, 0, 0, 0, 0]
+        body[6] = 255 - (sum(body[:6]) & 255)
+        pad = max(0, size - 1 - len(body))
+        return bytes([0x00] + body + [0] * pad)     # 首字节是 report id
+
+    @staticmethod
+    def _read(dev: HidDevice, size: int) -> Optional[bytes]:
+        raw = dev.get_feature(0x00, size)
+        if not raw or len(raw) < 4:
+            return None
+        return raw[1:]                              # 去掉 report id
+
+    def query(self, device: DeviceInfo) -> BatteryReading:
+        coll = self._collection(device)
+        if coll is None:
+            return BatteryReading(status=ST_UNSUPPORTED, protocol=self.name)
+        size = max(coll.feature_len, 17)
+        last = BatteryReading(status=ST_SLEEPING, protocol=self.name, detail="无响应")
+
+        for attempt in range(3):
+            if attempt:
+                time.sleep(0.12 * attempt)
+            try:
+                dev = HidDevice(coll.path)
+            except OSError as e:
+                last = BatteryReading(status=ST_ERROR, protocol=self.name, detail=str(e))
+                continue
+            try:
+                if not dev.set_feature(self._frame(self.CMD_STATUS, 0, size)):
+                    last = BatteryReading(status=ST_SLEEPING, protocol=self.name,
+                                          detail=f"写入被拒绝 err={dev.last_error}")
+                    continue
+                data = self._read(dev, size)
+                if data is None or data[0] == 0:
+                    # 接收器还没和鼠标对上话，补一次链路准备
+                    dev.set_feature(self._frame(self.CMD_LINK, 5, size))
+                    dev.set_feature(self._frame(self.CMD_STATUS, 0, size))
+                    data = self._read(dev, size)
+                if data is None or data[0] == 0:
+                    last = BatteryReading(status=ST_SLEEPING, protocol=self.name,
+                                          detail="接收器未同步")
+                    continue
+                level = data[2]
+                if 0 <= level <= 100:
+                    return BatteryReading(percent=level, status=ST_OK,
+                                          protocol=self.name, connection="2.4G")
+                last = BatteryReading(status=ST_ERROR, protocol=self.name,
+                                      detail=f"异常回包 {hexs(data, 12)}")
+                break
+            finally:
+                dev.close()
+        return last
+
+
 # ================================================================ Nordic 52
 class Nordic52Protocol(Protocol):
     """Compx/Nordic 52840 方案（VGN 蜻蜓、ATK、VXE、Dareu、G-Wolves 等）。
@@ -252,8 +340,11 @@ class Nordic52Protocol(Protocol):
     def matches(self, device: DeviceInfo) -> bool:
         if device.vid not in self.VIDS:
             return False
-        coll = device.pick_collection(self.USAGE_PAGE, self.USAGE, min_output=17)
-        return coll is not None
+        # 必须真有 FF02:0002 出报告集合。不能用 pick_collection 的兜底逻辑，
+        # 否则只有 feature 接口的新一代接收器（Dragonfly 3 Ultra）会被误判进来，
+        # 表现为写入报错、误报「接收器固件未开放电量接口」。
+        return any(i.usage_page == self.USAGE_PAGE and i.usage == self.USAGE
+                   and i.output_len >= 17 for i in device.vendor_collections)
 
     def query(self, device: DeviceInfo) -> BatteryReading:
         coll = device.pick_collection(self.USAGE_PAGE, self.USAGE, min_output=17)
@@ -755,6 +846,7 @@ class GenericBatteryProtocol(Protocol):
 PROTOCOLS: List[Protocol] = [
     BeiyingProtocol(),
     EvisionProtocol(),
+    RyFeatureProtocol(),
     Nordic52Protocol(),
     Nordic54Protocol(),
     KeychronProtocol(),

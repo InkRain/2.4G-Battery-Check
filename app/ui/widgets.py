@@ -187,6 +187,8 @@ _ICON_MAP = {
     "391D:2A02": "icon_v108.png",       # VGN V108
     "391D:1A05": "icon_dragonfly.png",  # Dragonfly 3 Master+ (2.4G dongle)
     "391D:1005": "icon_dragonfly.png",  # Dragonfly 3 Master (USB 直连)
+    "391D:1A25": "icon_dragonfly.png",  # Dragonfly 3 Ultra（2.4G，与 3 代同外形）
+    "391D:1028": "icon_dragonfly.png",  # Dragonfly 3 Ultra（有线）
 }
 _ICON_CACHE: dict = {}
 

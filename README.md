@@ -25,6 +25,7 @@
 - 🖱️ **VGN 设备优先支持**
   - VGN S99 / VXE75 / N75 等键盘（Evision 方案，`320F:5088`）
   - VGN 蜻蜓 F1/F2、VXE R1 等鼠标（Compx/Nordic 方案，`3554:Fxxx`、`391D:1A05` 等）
+  - VGN 蜻蜓 3 代（Dragonfly 3 Ultra 等，`391D:1A25`；这一代接收器只有 feature 接口，走 VGN Ry Feature 协议）
 - 🧩 **通用兼容**：罗技 HID++（Unifying/Lightspeed/Bolt）、Keychron Ultra-Link、ATK Nordic 54、MCHOSE Realtek 推送、标准 HID 电池用法
 - 🪟 **Windows 11 风格界面**：圆角无边框窗口、液态玻璃质感、浅色/深色/跟随系统主题、设备卡片网格
 - 📌 **托盘常驻**：左键弹电量面板（右下角通知卡片），右键菜单；每类设备一个环形电量图标；关闭窗口不退后台
@@ -90,6 +91,7 @@ Windows 不为 2.4G 接收器类设备提供电量 API，各厂商驱动（VGN H
 |---|---|---|
 | Evision | VGN S99/VXE75/N75（`320F:5088`） | `usagePage FF1C` reportId 4，请求 `04 20 00 1A 06`，回包第 8 字节=电量 |
 | Compx/Nordic 52 | VGN 蜻蜓/ATK/VXE/Dareu（`3554/391D/373B/260D/33E4`） | 17 字节 reportId 8 子命令 04，回包 offset 6=电量、offset 7=充电、8-9=电压mV |
+| VGN Ry Feature | VGN 蜻蜓 3 代起（`391D:1A25` 等，仅 feature 接口） | 64 字节 feature 报告，`F7`+CRC 取状态块，回包 offset 2=电量；`F6 05` 做链路准备 |
 | Nordic 54L15 | ATK Zero 等 | 64 字节命令 `72 07` |
 | Logitech HID++ | Unifying/Lightspeed/Bolt | `11 <slot> <feat> <fn<<4\|swid>`，特性 0x1004/0x1000/0x1001 |
 | Keychron | Ultra-Link 8K / M5 | feature `B3 06` → input `B4 06`，byte 20=电量 |
@@ -119,6 +121,7 @@ Windows 不为 2.4G 接收器类设备提供电量 API，各厂商驱动（VGN H
 ## 已知限制
 
 - **VGN V108 键盘（`391D:2A02`）**：已通过背赢（Beiying）协议支持 ✅（从 VGN HUB 逆向：输出报告 id 19，命令 `4A 01 00 00 00`，CRC=(19+负载和)&0xFF，应答 content[4]=电量、content[5] 高 4 位=充电）。键盘休眠时无应答，显示"休眠"并保留上次读数
+- **VGN 蜻蜓 3 代鼠标（`391D:1A25` Dragonfly 3 Ultra 等）**：已通过 VGN Ry Feature 协议支持 ✅。这一代接收器只暴露一个 65 字节 feature 集合（`FFFF:0002`）、没有输出报告，所以老的 Nordic 52 协议必然失败。命令帧 64 字节：`F7 00 00 00 00 00 <CRC>`，回包首字节 1 表示接收器已同步、第 3 字节为电量；接收器未同步时先发 `F6 05` 做链路准备。此协议在 2.4G 模式下读的是接收器缓存值，鼠标休眠也能保持读数
 - **金运 GX-01 耳机（`4C4A:4155`）**：固件未提供电量上报通道（HID 仅有媒体按键），显示"未开放"
 - **充电显示**：充电中在卡片上显示橙色"⚡ 充电中"，电量数字变绿，托盘图标叠加闪电标记；鼠标电量按 VGN HUB 同款电压-电量曲线（21 档放电表）换算，与官方驱动读数一致
 - **设备产品图**：键盘图提取自 VGN HUB 安装包（`app.asar` 内置 webp 高清渲染图）；鼠标图取自 VGN 官网 Dragonfly 3 系列产品图
